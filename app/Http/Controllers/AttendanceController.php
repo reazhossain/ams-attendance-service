@@ -6,12 +6,47 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
 
+    public function pushToServer()
+    {
+        // $attendances = Attendance::where("is_pushed", 0)->get();
 
-    public function getAllAttendance($from, $to, $pin=null)
+        $attendances = Attendance::where("is_pushed", 0)->get();
+        $post = [
+            'attendances' => $attendances
+            /* 'password' => 'passuser1',
+             'gender'   => 1,*/
+        ];
+
+        $ch = curl_init('http://localhost:9000/api/attendance/receive-attendance-from-other-service');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+
+        // execute!
+        $response = curl_exec($ch);
+
+        // close the connection, release resources used
+        curl_close($ch);
+
+        // do anything you want with your response
+        $response = json_decode($response, false);
+
+        if ($response->success) {
+            $successIds = $response->message;
+            Attendance::whereIn("id", $successIds)->update(['is_pushed' => 1]);
+
+        } else {
+            Log::critical('Error ' . $response->message);
+            dd($response->message);
+        }
+    }
+
+
+    public function getAllAttendance($from, $to, $pin = null)
     {
 
         try {
@@ -21,17 +56,17 @@ class AttendanceController extends Controller
             if ($fromDate && $toDate) {
                 $attendances = Attendance::whereDate('checktime', '>=', $fromDate)->whereDate('checktime', '<=', $toDate);
 
-                if($pin) $attendances->where("pin", $pin);
+                if ($pin) $attendances->where("pin", $pin);
 
                 return $attendances->get();
-            }else{
+            } else {
                 return response()
                     ->json(['success' => false, 'message' => "Failed"]);
             }
         } catch (\Exception $e) {
 
             return response()
-                ->json(['success' => false, 'message' => "Failed".$e->getMessage()]);
+                ->json(['success' => false, 'message' => "Failed" . $e->getMessage()]);
         }
 
 
@@ -61,7 +96,7 @@ class AttendanceController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
@@ -72,7 +107,7 @@ class AttendanceController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -83,7 +118,7 @@ class AttendanceController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
@@ -94,8 +129,8 @@ class AttendanceController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
@@ -106,7 +141,7 @@ class AttendanceController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)

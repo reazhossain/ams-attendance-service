@@ -19,3 +19,4 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::get('/attendance/{from}/{to}/{id?}', [\App\Http\Controllers\AttendanceController::class, 'getAllAttendance'])->name('attendance');
+Route::get('/run-attendance-push-service', [\App\Http\Controllers\AttendanceController::class, 'pushToServer'])->name('pushToServer');

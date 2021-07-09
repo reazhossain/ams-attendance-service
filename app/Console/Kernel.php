@@ -2,8 +2,12 @@
 
 namespace App\Console;
 
+use App\Models\Attendance;
+
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
@@ -25,7 +29,18 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+
+        $schedule->call(function () {
+
+            ///Check for attendance, send it to remote location
+            $this->pushToServer();
+
+
+        })->everyFiveMinutes();
     }
+
+
 
     /**
      * Register the commands for the application.
