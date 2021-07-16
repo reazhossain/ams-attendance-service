@@ -22,7 +22,7 @@ class AttendanceController extends Controller
              'gender'   => 1,*/
         ];
 
-        $ch = curl_init('http://localhost:9000/api/attendance/receive-attendance-from-other-service');
+        $ch = curl_init('http://ams.seed120.com/api/attendance/receive-attendance-from-other-service');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
 
