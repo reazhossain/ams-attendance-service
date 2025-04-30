@@ -13,36 +13,48 @@ class AttendanceController extends Controller
 
     public function pushToServer()
     {
-        // $attendances = Attendance::where("is_pushed", 0)->get();
+		$urls = [
+		"http://olea.amsseed.com/api/attendance/receive-attendance-from-other-service", 
+		"http://hsd.amsseed.com/api/attendance/receive-attendance-from-other-service", 
+		"http://bangebank.amsseed.com/api/attendance/receive-attendance-from-other-service"];
+		
+		
+		foreach($urls as $url){
+			 // $attendances = Attendance::where("is_pushed", 0)->get();
+				$attendances = Attendance::where("is_pushed", 0)->orderBy('id', 'desc')->take(500)->get();
+				
+				
+				$post = [
+					'attendances' => $attendances
+					/* 'password' => 'passuser1',
+					 'gender'   => 1,*/
+				];
 
-        $attendances = Attendance::where("is_pushed", 0)->get();
-        $post = [
-            'attendances' => $attendances
-            /* 'password' => 'passuser1',
-             'gender'   => 1,*/
-        ];
+				$ch = curl_init($url);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
 
-        $ch = curl_init('http://ams.seed120.com/api/attendance/receive-attendance-from-other-service');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+				// execute!
+				$response = curl_exec($ch);
 
-        // execute!
-        $response = curl_exec($ch);
+				// close the connection, release resources used
+				curl_close($ch);
 
-        // close the connection, release resources used
-        curl_close($ch);
+				// do anything you want with your response
+				$response = json_decode($response, false);
 
-        // do anything you want with your response
-        $response = json_decode($response, false);
+				if ($response->success) {
+					$successIds = $response->message;
+					Attendance::whereIn("id", $successIds)->update(['is_pushed' => 1]);
+					
 
-        if ($response->success) {
-            $successIds = $response->message;
-            Attendance::whereIn("id", $successIds)->update(['is_pushed' => 1]);
+				} else {
+					Log::critical('Error ' . $response->message);
+					dd($response->message);
+				}
+		}
+       
 
-        } else {
-            Log::critical('Error ' . $response->message);
-            dd($response->message);
-        }
     }
 
 
@@ -54,9 +66,9 @@ class AttendanceController extends Controller
             $toDate = Carbon::parse($to)->toDateString();
 
             if ($fromDate && $toDate) {
-                $attendances = Attendance::whereDate('checktime', '>=', $fromDate)->whereDate('checktime', '<=', $toDate);
+                $attendances = Attendance::whereDate('punch_time', '>=', $fromDate)->whereDate('punch_time', '<=', $toDate);
 
-                if ($pin) $attendances->where("pin", $pin);
+                if ($pin) $attendances->where("emp_code", $pin);
 
                 return $attendances->get();
             } else {
