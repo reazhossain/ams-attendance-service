@@ -45,7 +45,7 @@ class AttendanceController extends Controller
 
 				if ($response->success) {
 					$successIds = $response->message;
-					Attendance::whereIn("id", $successIds)->update(['is_pushed' => 1]);
+					Attendance::whereIn("id", $successIds)->update(['is_pushed' => 1, "pushed_url" =>$url ]);
 					
 
 				} else {

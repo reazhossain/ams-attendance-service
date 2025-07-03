@@ -8,5 +8,5 @@ class Attendance extends Model
 {
    /// protected $table="checkinout";
     protected $table="iclock_transaction";
-    protected $fillable = ['is_pushed'];
+    protected $fillable = ['is_pushed', 'pushed_url'];
 }
